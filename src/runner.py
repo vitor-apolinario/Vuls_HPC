@@ -619,7 +619,7 @@ def divide_type(file='../../Datasets/vulns/vuls_data_new.csv'):
 
 
 def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
-    stopat = 1
+    stopat = 0.95
     starting = 1
     np.random.seed(seed)
 
@@ -632,7 +632,8 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
     num2 = read.get_allpos()
     target = int(num2 * stopat)
 
-    read.enable_est = True
+    read.enable_est = False
+    read.step = 10
 
     while True:
         pos, neg, total = read.get_numbers()
@@ -696,8 +697,9 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
             #     for id in c:
             #         read.code_error(id, error=error)
     # read.export()
-    # results = analyze(read)
-    # print(results)
+    results = analyze(read)
+    print(results)
+    print(seed, read.first_pos, results['unique'] / len(read.body["code"]))
     result = {}
     result['est'] = (read.record_est)
     result['pos'] = (read.record)
@@ -707,7 +709,7 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
 
 
 def BM25(type, stop='true', error='none', correct = 'no', interval = 100000, seed=0):
-    stopat = 1
+    stopat = 0.95
     thres = 0
     starting = 1
     counter = 0
@@ -715,20 +717,22 @@ def BM25(type, stop='true', error='none', correct = 'no', interval = 100000, see
     np.random.seed(seed)
 
     read = MAR()
+    read.step = 10
     read.correction=correct
     read.crash='append'
-    read = read.create("vuls_data_new.csv",type)
+    read = read.create("moodle-combine.csv",type)
 
     read.interval = interval
 
     num2 = read.get_allpos()
     target = int(num2 * stopat)
 
-    read.enable_est = True
+    read.enable_est = False
 
 
     while True:
         pos, neg, total = read.get_numbers()
+        print(pos)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -790,7 +794,8 @@ def BM25(type, stop='true', error='none', correct = 'no', interval = 100000, see
                     read.code_error(id, error=error)
     # read.export()
     results = analyze(read)
-    print(results)
+    print(seed, read.first_pos, results['unique']/len(read.body["code"]))
+    # print(results)
     return read
 
 
@@ -886,8 +891,12 @@ def Metrics(type, stop='true', error='none', interval = 100000, seed=0):
     result['pos'] = (read.record)
     return read
 
+def test_run():
+    for i in range(30):
+        BM25('all', seed=i)
+
 def Random(type, stop='true', error='none', error_rate = 0.5, correct = 'no', interval = 100000, seed=0, neg_len=0.5):
-    stopat = 1
+    stopat = 0.95
     thres = 0
     starting = 1
     counter = 0
@@ -898,18 +907,20 @@ def Random(type, stop='true', error='none', error_rate = 0.5, correct = 'no', in
     read.false_neg = float(error_rate)
     read.correction=correct
     read.neg_len=float(neg_len)
-    read = read.create("vuls_data_new.csv",type)
+    read = read.create("moodle-combine.csv",type)
 
     read.interval = interval
 
     num2 = read.get_allpos()
     target = int(num2 * stopat)
 
-    read.enable_est = True
+    read.enable_est = False
+    read.step = 10
 
 
     while True:
         pos, neg, total = read.get_numbers()
+        print(pos)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -972,7 +983,9 @@ def Random(type, stop='true', error='none', error_rate = 0.5, correct = 'no', in
                     read.code_error(id, error=error)
     # read.export()
     results = analyze(read)
-    print(results)
+    # print(results)
+    # print(read.record)
+    print(seed, read.first_pos, results['unique']/len(read.body["code"]))
     return read
 
 def Semi(type, fea = 'text', uncertain = False, stop='true', error='none', error_rate = 0.5, correct = 'no', interval = 100000, seed=0, neg_len=0.5):
@@ -2632,9 +2645,9 @@ def error_hpcc_feature(fea, seed = 1):
             pass
         print(str(seed)+": "+type+": "+ fea+ ": ", end='')
         if fea == 'combine':
-            result = BM25(type,stop='mix',seed=seed)
+            result = BM25(type,stop='true',seed=seed)
         elif fea == 'text':
-            result = Random(type,stop='mix',seed=seed)
+            result = Random(type,stop='true',seed=seed)
         elif fea == 'metrics':
             result = Metrics(type,stop='true',seed=seed)
         elif fea == 'random':
@@ -2657,7 +2670,7 @@ def feature_summary():
     # import cPickle as pickle
     files = {'Arbitrary Code':28750, 'Improper Control of a Resource Through its Lifetime':28750, 'Other':28750, 'Range Error':28750, 'Code Quality':28750, 'all':28750}
     vuls = {'Arbitrary Code':119, 'Improper Control of a Resource Through its Lifetime':85, 'Other':32, 'Range Error':35, 'Code Quality':29, 'all':271}
-    features = ['combine','random','text','metrics','crash', 'semi']
+    features = ['text','metrics','crash', 'semi']
 
     result = {}
     for fea in features:

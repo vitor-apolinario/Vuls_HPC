@@ -22,7 +22,7 @@ class MAR(object):
         self.kept=50
         self.atleast=100
         self.syn_thres = 0.8
-        self.enable_est = True
+        self.enable_est = False
         self.interval = 5
         self.crash = 'no'
         self.norm = 'l2row'
@@ -31,6 +31,9 @@ class MAR(object):
         self.false_alarm = 0
         self.correction = 'no' # 'machine' or 'knee'
         self.neg_len = 0.5
+        self.n_coded = 0
+        self.poses_index = []
+        self.first_pos = None
 
 
 
@@ -1297,10 +1300,13 @@ class MAR(object):
 
     ## Code candidate studies ##
     def code(self,id,label):
+        if self.body["label"][id] == "yes" and self.first_pos == None:
+            self.first_pos = self.n_coded
         self.body["code"][id] = label
         self.body["time"][id] = time.time()
 
     def code_error(self,id,error='none'):
+        self.n_coded += 1
         if error=='circle':
             self.code_circle(id, self.body['label'][id])
         elif error=='random':
