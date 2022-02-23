@@ -16,6 +16,7 @@ import scipy.sparse.csr as csr
 
 class MAR(object):
     def __init__(self):
+        self.body = None
         self.fea_num = 4000
         self.step = 100
         self.enough = 10
@@ -117,9 +118,18 @@ class MAR(object):
 
     def loadfile(self):
         try:
+            with open("../memory/" + str(self.name) + "_body.pickle", "r") as handle:
+                cache_body = pickle.load(handle)
+                self.body = cache_body
+            return
+        except:
+            print('!' + str(self.name) +'_body.pickle')
+
+        try:
             self.body = pd.read_csv('/share/tjmenzie/zyu9/data/' + self.filename)
         except:
             self.body = pd.read_csv('../../Datasets/vulns/' + self.filename)
+
 
 
         if self.target_vul_type == 'all':
@@ -132,9 +142,19 @@ class MAR(object):
         self.body['fixed']=pd.Series([0]*len(label), index=self.body.index)
         self.body['count']=pd.Series([0]*len(label), index=self.body.index)
 
+        with open("../memory/"+str(self.name)+"_body.pickle","w") as handle:
+            pickle.dump(self.body,handle)
+
         return
 
     def preprocess(self):
+        try:
+            with open("../memory/" + str(self.name) + "_csr_mat.pickle", "r") as handle:
+                cache_mat = pickle.load(handle)
+                self.csr_mat = cache_mat
+            return
+        except:
+            print('!' + str(self.name) +'_csr_mat.pickle')
 
         if self.metrics=='only':
             self.csr_mat = self.body[['CountClassBase', 'CountClassCoupled','CountClassDerived','CountDeclInstanceVariablePrivate','CountDeclMethod','CountInput','CountLine','CountOutput','Cyclomatic','MaxInheritanceTree','MaxNesting']].as_matrix()
@@ -184,6 +204,11 @@ class MAR(object):
             self.csr_mat = preprocessing.normalize(self.csr_mat,norm='l1',axis=0)
 
         ########################################################
+
+
+        with open("../memory/"+str(self.name)+"_csr_mat.pickle","w") as handle:
+            pickle.dump(self.csr_mat,handle)
+
         return
 
     def lda(self):

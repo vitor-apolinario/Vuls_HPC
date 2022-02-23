@@ -708,7 +708,7 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
     return read
 
 
-def BM25(type, stop='true', error='none', correct = 'no', interval = 100000, seed=0):
+def Combine(type, stop='true', error='none', correct ='no', interval = 100000, seed=0):
     stopat = 0.95
     thres = 0
     starting = 1
@@ -893,9 +893,9 @@ def Metrics(type, stop='true', error='none', interval = 100000, seed=0):
 
 def test_run():
     for i in range(30):
-        BM25('all', seed=i)
+        Combine('all', seed=i)
 
-def Random(type, stop='true', error='none', error_rate = 0.5, correct = 'no', interval = 100000, seed=0, neg_len=0.5):
+def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', interval = 100000, seed=0, neg_len=0.5):
     stopat = 0.95
     thres = 0
     starting = 1
@@ -907,7 +907,7 @@ def Random(type, stop='true', error='none', error_rate = 0.5, correct = 'no', in
     read.false_neg = float(error_rate)
     read.correction=correct
     read.neg_len=float(neg_len)
-    read = read.create("moodle-combine.csv",type)
+    read = read.create("drupal-combine.csv",type, )
 
     read.interval = interval
 
@@ -1870,7 +1870,7 @@ def error_hpcc_more(cor, error_rate = 0.5, seed = 1):
 
 
 
-    Runfunc = Random
+    Runfunc = Text
 
     results={}
 
@@ -1901,7 +1901,7 @@ def error_hpcc_continue(cor, error_rate = 0.5, seed = 1):
 
 
 
-    Runfunc = Random
+    Runfunc = Text
 
     results = pickle.load(open("../dump/error_"+str(cor)+"_hpcc"+str(int(error_rate*100))+"_"+str(seed)+".pickle","r"))
 
@@ -1938,9 +1938,9 @@ def error_hpcc(error_rate = 0.5, seed = 1):
     # correct = ['machine']
     crash = 'new'
     if crash=='crash':
-        Runfunc = BM25
+        Runfunc = Combine
     else:
-        Runfunc = Random
+        Runfunc = Text
 
     results={file:{} for file in files}
     for cor in correct:
@@ -1969,9 +1969,9 @@ def error_inc(neg_len = 0.4, crash = 'new'):
     correct = ['machine']
 
     if crash=='crash':
-        Runfunc = BM25
+        Runfunc = Combine
     else:
-        Runfunc = Random
+        Runfunc = Text
 
     results={}
     tmp = []
@@ -2645,9 +2645,9 @@ def error_hpcc_feature(fea, seed = 1):
             pass
         print(str(seed)+": "+type+": "+ fea+ ": ", end='')
         if fea == 'combine':
-            result = BM25(type,stop='true',seed=seed)
+            result = Combine(type, stop='true', seed=seed)
         elif fea == 'text':
-            result = Random(type,stop='true',seed=seed)
+            result = Text(type, stop='true', seed=seed)
         elif fea == 'metrics':
             result = Metrics(type,stop='true',seed=seed)
         elif fea == 'random':
