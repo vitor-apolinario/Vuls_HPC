@@ -1124,7 +1124,9 @@ def Rand(type, stop='true', error='none', interval = 100000, seed=0, filename='v
 
     result['pos'] = (read.record)
 
-    return result
+    read.results = analyze(read)
+
+    return read
 
 ########
 def BM25_est(filename, stop='true', error='none', interval = 100000, seed=0):
@@ -2629,8 +2631,27 @@ def error_sumlatex():
 
 
 def run_target1_experiment():
-    for i in range(30):
-        error_hpcc_feature_ds('text', seed=i, filename='drupal_combine.csv')
+    dataset_files = ['moodle_combine.csv']
+    features = ['combine', 'text', 'crash', 'random']
+    trecs = [0.60, 0.80, 0.95]
+
+    for filename in dataset_files:
+        for fea in features:
+            for trec in trecs:
+                for i in range(30):
+                    error_hpcc_feature_ds(fea, seed=i, filename=filename, trec=trec)
+
+
+def summary_target1_experiment():
+    dataset_files = ['phpmyadmin_combine.csv']
+    features = ['combine', 'text', 'crash', 'random']
+    trecs = [0.60, 0.80, 0.95]
+
+    for filename in dataset_files:
+        for fea in features:
+            for trec in trecs:
+                print(sum_features(filename=filename.split(".")[0], fea=fea, trec=trec))
+
 
 
 ############
@@ -2648,7 +2669,7 @@ def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.9
     except:
         pass
 
-    print(round)
+    print(round+' @'+str(int(trec*100)))
 
     if fea == 'combine':
         read = Combine(type, stop='true', seed=seed, filename=filename, trec=trec)
@@ -2661,10 +2682,7 @@ def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.9
     else:
         raise Exception('wrong feature provided')
 
-    if fea=='random':
-        results[str(trec)] = read
-    else:
-        results[str(trec)] = {'loops':read.record, 'stats':read.results}
+    results[str(trec)] = {'loops':read.record, 'stats':read.results}
 
     with open("../dump/features_"+round+".pickle","w") as handle:
         pickle.dump(results,handle)
@@ -2673,7 +2691,7 @@ def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.9
 def sum_features(filename='drupal_combine', fea='text', trec=0.95):
     import glob
     files = glob.glob("/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
-    print(files)
+    # print(files)
 
     costs=[]
 
@@ -2682,7 +2700,7 @@ def sum_features(filename='drupal_combine', fea='text', trec=0.95):
             with open(f,"r") as handle:
                 results = pickle.load(handle)
                 costs.append(results[str(trec)]['stats']['unique']/results[str(trec)]['stats']['files'])
-                print(results[str(trec)]['stats'])
+                # print(results[str(trec)]['stats'])
         except:
             pass
 

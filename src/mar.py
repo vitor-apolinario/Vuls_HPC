@@ -149,7 +149,7 @@ class MAR(object):
 
     def preprocess(self):
         try:
-            with open("../memory/" + str(self.name) + "_csr_mat.pickle", "r") as handle:
+            with open("../memory/" + str(self.name) + "_wcrash" if self.crash == "append" else "" + "_csr_mat.pickle", "r") as handle:
                 cache_mat = pickle.load(handle)
                 self.csr_mat = cache_mat
             return
@@ -206,7 +206,7 @@ class MAR(object):
         ########################################################
 
 
-        with open("../memory/"+str(self.name)+"_csr_mat.pickle","w") as handle:
+        with open("../memory/"+str(self.name)+"_wcrash" if self.crash == "append" else ""+"_csr_mat.pickle","w") as handle:
             pickle.dump(self.csr_mat,handle)
 
         return
