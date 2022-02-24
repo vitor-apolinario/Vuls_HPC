@@ -3,6 +3,9 @@ from __future__ import division, print_function
 
 import numpy as np
 from pdb import set_trace
+
+from pandas.core.computation.pytables import Expr
+
 from demos import cmd
 import pickle
 import matplotlib.pyplot as plt
@@ -267,7 +270,7 @@ def analyze(read):
     unique = len(read.body['code']) - len(unknown)
     count = sum(read.body['count'])
     correction = read.correction
-    return {"falsepos": falsepos, "truepos": truepos, "falseneg": falseneg, "unknownyes": unknownyes, "unique": unique, "count": count, "correction": correction}
+    return {"falsepos": falsepos, "truepos": truepos, "falseneg": falseneg, "unknownyes": unknownyes, "unique": unique, "count": count, "correction": correction, "files": len(read.body['code'])}
 
 
 
@@ -618,13 +621,13 @@ def divide_type(file='../../Datasets/vulns/vuls_data_new.csv'):
 
 
 
-def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
-    stopat = 0.95
+def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95):
+    stopat = trec
     starting = 1
     np.random.seed(seed)
 
     read = MAR()
-    read = read.create("vuls_data_new.csv",type)
+    read = read.create(filename,type)
     thres = Counter(read.body.crashes>0)[True]
     read.interval = interval
 
@@ -697,9 +700,9 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
             #     for id in c:
             #         read.code_error(id, error=error)
     # read.export()
-    results = analyze(read)
-    print(results)
-    print(seed, read.first_pos, results['unique'] / len(read.body["code"]))
+    read.results = analyze(read)
+    print(read.results)
+    print(seed, read.first_pos, read.results['unique'] / len(read.body["code"]))
     result = {}
     result['est'] = (read.record_est)
     result['pos'] = (read.record)
@@ -708,8 +711,8 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0):
     return read
 
 
-def Combine(type, stop='true', error='none', correct ='no', interval = 100000, seed=0):
-    stopat = 0.95
+def Combine(type, stop='true', error='none', correct ='no', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95):
+    stopat = trec
     thres = 0
     starting = 1
     counter = 0
@@ -720,7 +723,7 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
     read.step = 10
     read.correction=correct
     read.crash='append'
-    read = read.create("moodle-combine.csv",type)
+    read = read.create(filename,type)
 
     read.interval = interval
 
@@ -793,8 +796,8 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
                 for id in c:
                     read.code_error(id, error=error)
     # read.export()
-    results = analyze(read)
-    print(seed, read.first_pos, results['unique']/len(read.body["code"]))
+    read.results = analyze(read)
+    print(seed, read.first_pos, read.results['unique']/len(read.body["code"]))
     # print(results)
     return read
 
@@ -891,12 +894,9 @@ def Metrics(type, stop='true', error='none', interval = 100000, seed=0):
     result['pos'] = (read.record)
     return read
 
-def test_run():
-    for i in range(30):
-        Combine('all', seed=i)
 
-def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', interval = 100000, seed=0, neg_len=0.5):
-    stopat = 0.95
+def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', interval = 100000, seed=0, neg_len=0.5, filename='vuls_data_new.csv', trec=0.95):
+    stopat = trec
     thres = 0
     starting = 1
     counter = 0
@@ -907,7 +907,7 @@ def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', inter
     read.false_neg = float(error_rate)
     read.correction=correct
     read.neg_len=float(neg_len)
-    read = read.create("drupal-combine.csv",type, )
+    read = read.create(filename,type)
 
     read.interval = interval
 
@@ -982,10 +982,10 @@ def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', inter
                 for id in c:
                     read.code_error(id, error=error)
     # read.export()
-    results = analyze(read)
+    read.results = analyze(read)
     # print(results)
     # print(read.record)
-    print(seed, read.first_pos, results['unique']/len(read.body["code"]))
+    print(seed, read.first_pos, read.results['unique']/len(read.body["code"]))
     return read
 
 def Semi(type, fea = 'text', uncertain = False, stop='true', error='none', error_rate = 0.5, correct = 'no', interval = 100000, seed=0, neg_len=0.5):
@@ -1085,26 +1085,28 @@ def Semi(type, fea = 'text', uncertain = False, stop='true', error='none', error
     print(results)
     return read
 
-def Rand(type, stop='true', error='none', interval = 100000, seed=0):
-    stopat = 1
+def Rand(type, stop='true', error='none', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95):
+    stopat = trec
 
     np.random.seed(seed)
 
     read = MAR()
-    read = read.create("vuls_data_new.csv",type)
+    read = read.create(filename,type)
 
     read.interval = interval
-    read.step = 100
+    read.step = 10
 
     num2 = read.get_allpos()
     target = int(num2 * stopat)
 
-    read.enable_est = True
+    read.enable_est = False
 
     result = {}
-    result['est'] = {'x':[],'semi':[]}
+    # result['est'] = {'x':[],'semi':[]}
+    result['est'] = {'x':[]}
     while True:
         pos, neg, total = read.get_numbers()
+        print(pos)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -1118,7 +1120,7 @@ def Rand(type, stop='true', error='none', interval = 100000, seed=0):
             read.code_error(id, error=error)
         if pos+neg>0:
             result['est']['x'].append(pos+neg)
-            result['est']['semi'].append(float(pos)/(pos+neg)*total)
+            # result['est']['semi'].append(float(pos)/(pos+neg)*total)
 
     result['pos'] = (read.record)
 
@@ -2624,6 +2626,70 @@ def error_sumlatex():
         df = pd.DataFrame(data=dictdf,
                           columns=cols)
         df.to_csv("../figure/errorall_" + str(error) + '.csv')
+
+
+def run_target1_experiment():
+    for i in range(30):
+        error_hpcc_feature_ds('text', seed=i, filename='drupal_combine.csv')
+
+
+############
+def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.95):
+    seed = int(seed)
+    np.random.seed(seed)
+    type = 'all'
+    results={}
+
+    round="hpcc_{}_{}_{}".format(filename.split(".")[0], fea, seed)
+
+    try:
+        with open("../dump/features_"+round+".pickle","r") as handle:
+            results = pickle.load(handle)
+    except:
+        pass
+
+    print(round)
+
+    if fea == 'combine':
+        read = Combine(type, stop='true', seed=seed, filename=filename, trec=trec)
+    elif fea == 'text':
+        read = Text(type, stop='true', seed=seed, filename=filename, trec=trec)
+    elif fea == 'crash':
+        read = CRASH(type,stop='true',seed=seed, filename=filename, trec=trec)
+    elif fea == 'random':
+        read = Rand(type,stop='true',seed=seed, filename=filename, trec=trec)
+    else:
+        raise Exception('wrong feature provided')
+
+    if fea=='random':
+        results[str(trec)] = read
+    else:
+        results[str(trec)] = {'loops':read.record, 'stats':read.results}
+
+    with open("../dump/features_"+round+".pickle","w") as handle:
+        pickle.dump(results,handle)
+
+
+def sum_features(filename='drupal_combine', fea='text', trec=0.95):
+    import glob
+    files = glob.glob("/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
+    print(files)
+
+    costs=[]
+
+    for f in files:
+        try:
+            with open(f,"r") as handle:
+                results = pickle.load(handle)
+                costs.append(results[str(trec)]['stats']['unique']/results[str(trec)]['stats']['files'])
+                print(results[str(trec)]['stats'])
+        except:
+            pass
+
+    median = int(np.median(costs) * 100)
+    iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25))*100)
+
+    return { "dataset": filename.split("_")[0], "feature": fea, "trec": trec, "median": median, "iqr": iqr }
 
 
 ############
