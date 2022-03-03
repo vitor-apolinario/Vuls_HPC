@@ -636,7 +636,7 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='
     target = int(num2 * stopat)
 
     read.enable_est = False
-    read.step = 10
+    read.step = 100
 
     while True:
         pos, neg, total = read.get_numbers()
@@ -720,7 +720,7 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
     np.random.seed(seed)
 
     read = MAR()
-    read.step = 10
+    read.step = 100
     read.correction=correct
     read.crash='append'
     read = read.create(filename,type)
@@ -735,7 +735,7 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
 
     while True:
         pos, neg, total = read.get_numbers()
-        print(pos)
+        print(pos, pos+neg)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -2631,9 +2631,9 @@ def error_sumlatex():
 
 
 def run_target1_experiment():
-    dataset_files = ['moodle_combine.csv']
-    features = ['combine', 'text', 'crash', 'random']
-    trecs = [0.60, 0.80, 0.95]
+    dataset_files = ['mozilla_cla.csv']
+    features = ['combine', 'crash']
+    trecs = [0.95]
 
     for filename in dataset_files:
         for fea in features:
@@ -2643,8 +2643,9 @@ def run_target1_experiment():
 
 
 def summary_target1_experiment():
-    dataset_files = ['phpmyadmin_combine.csv']
-    features = ['combine', 'text', 'crash', 'random']
+    dataset_files = ['moodle_combine.csv']
+    # features = ['combine', 'text', 'crash', 'random']
+    features = ['combine']
     trecs = [0.60, 0.80, 0.95]
 
     for filename in dataset_files:
