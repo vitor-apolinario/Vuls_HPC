@@ -711,7 +711,7 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='
     return read
 
 
-def Combine(type, stop='true', error='none', correct ='no', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95):
+def Combine(type, stop='true', error='none', correct ='no', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95, round='@unknow'):
     stopat = trec
     thres = 0
     starting = 1
@@ -721,6 +721,7 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
 
     read = MAR()
     read.step = 100
+    read.round = round
     read.correction=correct
     read.crash='append'
     read = read.create(filename,type)
@@ -735,7 +736,7 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
 
     while True:
         pos, neg, total = read.get_numbers()
-        print(pos, pos+neg)
+        # print(pos, pos+neg)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -2631,8 +2632,8 @@ def error_sumlatex():
 
 
 def run_target1_experiment():
-    dataset_files = ['mozilla_cla.csv']
-    features = ['combine', 'crash']
+    dataset_files = ['vuls_data_new.csv']
+    features = ['combine']
     trecs = [0.95]
 
     for filename in dataset_files:
@@ -2672,14 +2673,15 @@ def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.9
 
     print(round+' @'+str(int(trec*100)))
 
+    # todo: set round in text, crash and random
     if fea == 'combine':
-        read = Combine(type, stop='true', seed=seed, filename=filename, trec=trec)
+        read = Combine(type, stop='true', seed=seed, filename=filename, trec=trec, round=round)
     elif fea == 'text':
-        read = Text(type, stop='true', seed=seed, filename=filename, trec=trec)
+        read = Text(type, stop='true', seed=seed, filename=filename, trec=trec, round=round)
     elif fea == 'crash':
-        read = CRASH(type,stop='true',seed=seed, filename=filename, trec=trec)
+        read = CRASH(type,stop='true',seed=seed, filename=filename, trec=trec, round=round)
     elif fea == 'random':
-        read = Rand(type,stop='true',seed=seed, filename=filename, trec=trec)
+        read = Rand(type,stop='true',seed=seed, filename=filename, trec=trec, round=round)
     else:
         raise Exception('wrong feature provided')
 

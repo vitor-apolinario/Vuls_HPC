@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import time
 import os
 import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
 import scipy.sparse.csr as csr
 
 
@@ -325,6 +326,10 @@ class MAR(object):
             self.record['pos'].append(int(pos))
         self.pool = np.where(np.array(self.body['code']) == "undetermined")[0]
         self.labeled = list(set(range(len(self.body['code']))) - set(self.pool))
+
+        if ((pos + neg) % 1000) == 0:
+            print(self.round, pos, neg)
+
         return pos, neg, total
 
     def export(self):
