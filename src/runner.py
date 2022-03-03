@@ -19,7 +19,7 @@ from collections import Counter
 from mar import MAR
 import pandas as pd
 
-
+import multiprocessing
 
 
 
@@ -621,7 +621,7 @@ def divide_type(file='../../Datasets/vulns/vuls_data_new.csv'):
 
 
 
-def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95):
+def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95, round='@unknow'):
     stopat = trec
     starting = 1
     np.random.seed(seed)
@@ -630,6 +630,7 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='
     read = read.create(filename,type)
     thres = Counter(read.body.crashes>0)[True]
     read.interval = interval
+    read.roundname = round
 
 
     num2 = read.get_allpos()
@@ -640,10 +641,10 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='
 
     while True:
         pos, neg, total = read.get_numbers()
-        try:
-            print("%d, %d, %d" %(pos,pos+neg, read.est_num))
-        except:
-            print("%d, %d" %(pos,pos+neg))
+        # try:
+        #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
+        # except:
+        #     print("%d, %d" %(pos,pos+neg))
 
         if pos + neg >= total:
             if stop=='knee' and error=='random':
@@ -702,7 +703,7 @@ def CRASH(type, stop='true', error='none', interval = 100000, seed=0, filename='
     # read.export()
     read.results = analyze(read)
     print(read.results)
-    print(seed, read.first_pos, read.results['unique'] / len(read.body["code"]))
+    print(read.roundname, read.results['unique'] / len(read.body["code"]))
     result = {}
     result['est'] = (read.record_est)
     result['pos'] = (read.record)
@@ -721,7 +722,7 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
 
     read = MAR()
     read.step = 100
-    read.round = round
+    read.roundname = round
     read.correction=correct
     read.crash='append'
     read = read.create(filename,type)
@@ -798,7 +799,7 @@ def Combine(type, stop='true', error='none', correct ='no', interval = 100000, s
                     read.code_error(id, error=error)
     # read.export()
     read.results = analyze(read)
-    print(seed, read.first_pos, read.results['unique']/len(read.body["code"]))
+    print(read.roundname , read.results['unique']/len(read.body["code"]))
     # print(results)
     return read
 
@@ -896,7 +897,7 @@ def Metrics(type, stop='true', error='none', interval = 100000, seed=0):
     return read
 
 
-def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', interval = 100000, seed=0, neg_len=0.5, filename='vuls_data_new.csv', trec=0.95):
+def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', interval = 100000, seed=0, neg_len=0.5, filename='vuls_data_new.csv', trec=0.95, round='@unknow'):
     stopat = trec
     thres = 0
     starting = 1
@@ -904,6 +905,7 @@ def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', inter
     pos_last = 0
     np.random.seed(seed)
     read = MAR()
+    read.roundname = round
 
     read.false_neg = float(error_rate)
     read.correction=correct
@@ -916,12 +918,12 @@ def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', inter
     target = int(num2 * stopat)
 
     read.enable_est = False
-    read.step = 10
+    read.step = 100
 
 
     while True:
         pos, neg, total = read.get_numbers()
-        print(pos)
+        # print(pos)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -986,7 +988,7 @@ def Text(type, stop='true', error='none', error_rate = 0.5, correct ='no', inter
     read.results = analyze(read)
     # print(results)
     # print(read.record)
-    print(seed, read.first_pos, read.results['unique']/len(read.body["code"]))
+    print(read.roundname, read.results['unique']/len(read.body["code"]))
     return read
 
 def Semi(type, fea = 'text', uncertain = False, stop='true', error='none', error_rate = 0.5, correct = 'no', interval = 100000, seed=0, neg_len=0.5):
@@ -1086,7 +1088,7 @@ def Semi(type, fea = 'text', uncertain = False, stop='true', error='none', error
     print(results)
     return read
 
-def Rand(type, stop='true', error='none', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95):
+def Rand(type, stop='true', error='none', interval = 100000, seed=0, filename='vuls_data_new.csv', trec=0.95, round='@unknow'):
     stopat = trec
 
     np.random.seed(seed)
@@ -1095,7 +1097,8 @@ def Rand(type, stop='true', error='none', interval = 100000, seed=0, filename='v
     read = read.create(filename,type)
 
     read.interval = interval
-    read.step = 10
+    read.step = 100
+    read.roundname = round
 
     num2 = read.get_allpos()
     target = int(num2 * stopat)
@@ -1107,7 +1110,7 @@ def Rand(type, stop='true', error='none', interval = 100000, seed=0, filename='v
     result['est'] = {'x':[]}
     while True:
         pos, neg, total = read.get_numbers()
-        print(pos)
+        # print(pos)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -2632,32 +2635,46 @@ def error_sumlatex():
 
 
 def run_target1_experiment():
-    dataset_files = ['vuls_data_new.csv']
-    features = ['combine']
-    trecs = [0.95]
+    dataset_files = ['moodle_combine.csv']
+    features = ['combine', 'text', 'random']
+    trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
 
+    pool = multiprocessing.Pool()
+
+    arglist=[]
     for filename in dataset_files:
         for fea in features:
             for trec in trecs:
                 for i in range(30):
-                    error_hpcc_feature_ds(fea, seed=i, filename=filename, trec=trec)
+                    arglist.append((fea, i, filename, trec))
+
+    pool.map(error_hpcc_feature_ds_wrapper, arglist)
+    pool.close()
 
 
 def summary_target1_experiment():
-    dataset_files = ['moodle_combine.csv']
-    # features = ['combine', 'text', 'crash', 'random']
-    features = ['combine']
-    trecs = [0.60, 0.80, 0.95]
+    dataset_files = ['drupal_combine.csv', 'phpmyadmin_combine.csv']
+    features = ['text', 'combine', 'random']
+    trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1]
+
+    res = []
 
     for filename in dataset_files:
         for fea in features:
             for trec in trecs:
-                print(sum_features(filename=filename.split(".")[0], fea=fea, trec=trec))
+                res.append(sum_features(filename=filename.split(".")[0], fea=fea, trec=trec))
 
+    for line in res:
+        print("{}, {}, {}, {} ({})".format(line['feature'], line['dataset'], line['trec'], line['median'], line['iqr']))
+
+
+def error_hpcc_feature_ds_wrapper(args):
+    error_hpcc_feature_ds(*args)
 
 
 ############
 def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.95):
+    print(fea, seed, filename, trec)
     seed = int(seed)
     np.random.seed(seed)
     type = 'all'
@@ -2671,17 +2688,18 @@ def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.9
     except:
         pass
 
-    print(round+' @'+str(int(trec*100)))
+    strec=' @'+str(int(trec*100))
+    # print(round+strec)
 
     # todo: set round in text, crash and random
     if fea == 'combine':
-        read = Combine(type, stop='true', seed=seed, filename=filename, trec=trec, round=round)
+        read = Combine(type, stop='true', seed=seed, filename=filename, trec=trec, round=round+strec)
     elif fea == 'text':
-        read = Text(type, stop='true', seed=seed, filename=filename, trec=trec, round=round)
+        read = Text(type, stop='true', seed=seed, filename=filename, trec=trec, round=round+strec)
     elif fea == 'crash':
-        read = CRASH(type,stop='true',seed=seed, filename=filename, trec=trec, round=round)
+        read = CRASH(type,stop='true',seed=seed, filename=filename, trec=trec, round=round+strec)
     elif fea == 'random':
-        read = Rand(type,stop='true',seed=seed, filename=filename, trec=trec, round=round)
+        read = Rand(type,stop='true',seed=seed, filename=filename, trec=trec, round=round+strec)
     else:
         raise Exception('wrong feature provided')
 
@@ -2694,7 +2712,7 @@ def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.9
 def sum_features(filename='drupal_combine', fea='text', trec=0.95):
     import glob
     files = glob.glob("/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
-    # print(files)
+    print(filename, fea, trec)
 
     costs=[]
 

@@ -327,8 +327,8 @@ class MAR(object):
         self.pool = np.where(np.array(self.body['code']) == "undetermined")[0]
         self.labeled = list(set(range(len(self.body['code']))) - set(self.pool))
 
-        if ((pos + neg) % 1000) == 0:
-            print(self.round, pos, neg)
+        if (pos+neg) > 0 and ((pos + neg) % 1000) == 0:
+            print(self.roundname, pos, neg)
 
         return pos, neg, total
 
