@@ -8,7 +8,7 @@ from mar import MAR
 from demos import cmd
 
 
-def run_target1():
+def run_target_1():
     dataset_files = ['drupal_combine.csv']
     features = ['combine', 'text', 'random']
     trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
@@ -20,7 +20,22 @@ def run_target1():
         for fea in features:
             for trec in trecs:
                 for i in range(30):
-                    arglist.append(fea, i, filename, trec)
+                    arglist.append((fea, i, filename, trec))
+
+    pool.map(error_hpcc_feature_ds_wrapper, arglist)
+    pool.close()
+
+
+def run_missing_target1(ds='mozilla_cla'):
+    with open("../memory/rerun_params_{}.pickle".format(ds), "r") as handle:
+        rerun = pickle.load(handle)
+        print(rerun)
+
+    pool = multiprocessing.Pool()
+
+    arglist = []
+    for execution in rerun:
+        arglist.append((execution['fea'], int(execution['seed']), execution['filename'], float(execution['trec'])))
 
     pool.map(error_hpcc_feature_ds_wrapper, arglist)
     pool.close()
