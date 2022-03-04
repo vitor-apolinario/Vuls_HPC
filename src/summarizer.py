@@ -1,10 +1,11 @@
+import glob
 import pickle
 
 import numpy as np
 from demos import cmd
 
 
-def summary_target1_experiment():
+def run_target_1():
     dataset_files = ['drupal_combine.csv']
     features = ['combine', 'text', 'random']
     trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
@@ -13,32 +14,66 @@ def summary_target1_experiment():
     for filename in dataset_files:
         for fea in features:
             for trec in trecs:
-                res.append(sum_features(filename=filename.split(".")[0], fea=fea, trec=trec))
+                res.append(run_summary(filename=filename.split(".")[0], fea=fea, trec=trec))
 
     for line in res:
         print("{}, {}, {}, {} ({})".format(line['feature'], line['dataset'], line['trec'], line['median'], line['iqr']))
 
 
-def sum_features(filename='drupal_combine', fea='text', trec=0.95):
+def run_summary(filename='drupal_combine', fea='text', trec=0.95):
     import glob
-    files = glob.glob("/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
+    files = glob.glob(
+        "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
     print(filename, fea, trec)
 
-    costs=[]
+    costs = []
 
     for f in files:
         try:
-            with open(f,"r") as handle:
+            with open(f, "r") as handle:
                 results = pickle.load(handle)
-                costs.append(float(results[str(trec)]['stats']['unique'])/float(results[str(trec)]['stats']['files']))
+                costs.append(float(results[str(trec)]['stats']['unique']) / float(results[str(trec)]['stats']['files']))
                 # print(results[str(trec)]['stats'])
         except:
             pass
 
     median = int(np.median(costs) * 100)
-    iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25))*100)
+    iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25)) * 100)
 
-    return { "dataset": filename.split("_")[0], "feature": fea, "trec": trec, "median": median, "iqr": iqr }
+    return {"dataset": filename.split("_")[0], "feature": fea, "trec": trec, "median": median, "iqr": iqr}
+
+
+def check_results():
+    dataset_files = ['drupal_combine']
+    features = ['combine', 'text', 'crash', 'random']
+    trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
+
+    rerun_params = []
+
+    for ds_filename in dataset_files:
+        for fea in features:
+            for trec in trecs:
+                files = glob.glob(
+                    "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(
+                        ds_filename,
+                        fea))
+                for result_file_path in files:
+                    try:
+                        with open(result_file_path, "r") as handle:
+                            results = pickle.load(handle)
+                            cost = (float(results[str(trec)]['stats']['unique']) / float(
+                                results[str(trec)]['stats']['files']))
+                    except:
+                        try:
+                            raw_filename = result_file_path.split('/')[-1].replace('.pickle', '')
+                            seed = raw_filename.split('_')[-1]
+                            print(
+                                {'fea': fea, 'seed': seed, 'filename': "{}.csv".format(ds_filename), 'trec': trec})
+                        except:
+                            raise Exception("Unable to check {} {}".format(result_file_path, trec))
+
+        with open("../memory/rerun_params.pickle", "w") as handle:
+            pickle.dump(rerun_params, handle)
 
 
 if __name__ == "__main__":
