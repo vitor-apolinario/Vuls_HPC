@@ -43,9 +43,9 @@ def run_summary(filename='drupal_combine', fea='text', trec=0.95):
     return {"dataset": filename.split("_")[0], "feature": fea, "trec": trec, "median": median, "iqr": iqr}
 
 
-def check_results():
-    dataset_files = ['drupal_combine']
-    features = ['combine', 'text', 'crash', 'random']
+def check_missing_results():
+    dataset_files = ['mozilla_cla']
+    features = ['combine', 'text', 'random']
     trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
 
     rerun_params = []
@@ -53,12 +53,11 @@ def check_results():
     for ds_filename in dataset_files:
         for fea in features:
             for trec in trecs:
-                files = glob.glob(
-                    "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(
-                        ds_filename,
-                        fea))
-                for result_file_path in files:
+                for seed in range(30):
                     try:
+                        result_file_path = "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC" \
+                                           "/dump/features_hpcc_{}_{}_{}.pickle".format(ds_filename, fea, seed)
+
                         with open(result_file_path, "r") as handle:
                             results = pickle.load(handle)
                             cost = (float(results[str(trec)]['stats']['unique']) / float(
@@ -67,12 +66,13 @@ def check_results():
                         try:
                             raw_filename = result_file_path.split('/')[-1].replace('.pickle', '')
                             seed = raw_filename.split('_')[-1]
-                            print(
-                                {'fea': fea, 'seed': seed, 'filename': "{}.csv".format(ds_filename), 'trec': trec})
+                            run = {'fea': fea, 'seed': seed, 'filename': "{}.csv".format(ds_filename), 'trec': trec}
+                            print(run)
+                            rerun_params.append(run)
                         except:
                             raise Exception("Unable to check {} {}".format(result_file_path, trec))
 
-        with open("../memory/rerun_params.pickle", "w") as handle:
+        with open("../memory/rerun_params_{}.pickle".format(ds_filename), "w") as handle:
             pickle.dump(rerun_params, handle)
 
 
