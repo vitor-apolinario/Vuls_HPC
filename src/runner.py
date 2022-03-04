@@ -2653,9 +2653,9 @@ def run_target1_experiment():
 
 
 def summary_target1_experiment():
-    dataset_files = ['drupal_combine.csv', 'phpmyadmin_combine.csv']
+    dataset_files = ['drupal_combine.csv']
     features = ['text', 'combine', 'random']
-    trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1]
+    trecs = [0.6]
 
     res = []
 
