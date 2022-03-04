@@ -8,7 +8,7 @@ from mar import MAR
 from demos import cmd
 
 
-def run_target1_experiment():
+def run_target1():
     dataset_files = ['drupal_combine.csv']
     features = ['combine', 'text', 'random']
     trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
@@ -20,7 +20,7 @@ def run_target1_experiment():
         for fea in features:
             for trec in trecs:
                 for i in range(30):
-                    arglist.append((fea, i, filename, trec))
+                    arglist.append(fea, i, filename, trec)
 
     pool.map(error_hpcc_feature_ds_wrapper, arglist)
     pool.close()
@@ -48,9 +48,9 @@ def error_hpcc_feature_ds(fea, seed=1, filename='drupal_combine.csv', trec=0.95)
 
     # todo: set round in text, crash and random
     if fea == 'combine':
-        read = Combine(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round=round + strec)
+        read = Combine(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round_id=round + strec)
     elif fea == 'text':
-        read = Text(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round=round + strec)
+        read = Text(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round_id=round + strec)
     elif fea == 'crash':
         read = CRASH(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round_id=round + strec)
     elif fea == 'random':
@@ -65,7 +65,7 @@ def error_hpcc_feature_ds(fea, seed=1, filename='drupal_combine.csv', trec=0.95)
 
 
 def Combine(vul_type, stop='true', error='none', correct='no', interval=100000, seed=0, filename='vuls_data_new.csv',
-            trec=0.95, round='@unknow'):
+            trec=0.95, round_id='@unknow'):
     stopat = trec
     thres = 0
     starting = 1
@@ -75,7 +75,7 @@ def Combine(vul_type, stop='true', error='none', correct='no', interval=100000, 
 
     read = MAR()
     read.step = 10
-    read.roundname = round
+    read.roundname = round_id
     read.correction = correct
     read.crash = 'append'
     read = read.create(filename, vul_type)
@@ -157,7 +157,7 @@ def Combine(vul_type, stop='true', error='none', correct='no', interval=100000, 
 
 
 def Text(vul_type, stop='true', error='none', error_rate=0.5, correct='no', interval=100000, seed=0, neg_len=0.5,
-         filename='vuls_data_new.csv', trec=0.95, round='@unknow'):
+         filename='vuls_data_new.csv', trec=0.95, round_id='@unknow'):
     stopat = trec
     thres = 0
     starting = 1
@@ -165,7 +165,7 @@ def Text(vul_type, stop='true', error='none', error_rate=0.5, correct='no', inte
     pos_last = 0
     np.random.seed(seed)
     read = MAR()
-    read.roundname = round
+    read.roundname = round_id
 
     read.false_neg = float(error_rate)
     read.correction = correct
