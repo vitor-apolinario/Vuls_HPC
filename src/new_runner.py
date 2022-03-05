@@ -66,9 +66,9 @@ def error_hpcc_feature_ds(fea, seed=1, filename='drupal_combine.csv', trec=0.95)
     if fea == 'combine':
         read = Combine(filename=filename, trec=trec, seed=seed, round_id=round + strec)
     elif fea == 'text':
-        read = Text(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round_id=round + strec)
+        read = Text(filename=filename, trec=trec, seed=seed, round_id=round + strec)
     elif fea == 'crash':
-        read = CRASH(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round_id=round + strec)
+        read = CRASH(filename=filename, trec=trec, seed=seed, round_id=round + strec)
     elif fea == 'random':
         read = Rand(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round_id=round + strec)
     else:
@@ -81,7 +81,6 @@ def error_hpcc_feature_ds(fea, seed=1, filename='drupal_combine.csv', trec=0.95)
 
 
 def Combine(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow'):
-    stopat = trec
     thres = 0
     starting = 1
     np.random.seed(seed)
@@ -96,7 +95,7 @@ def Combine(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow')
     read.interval = 100000
 
     num2 = read.get_allpos()
-    target = int(num2 * stopat)
+    target = int(num2 * trec)
 
     read.enable_est = False
 
@@ -128,7 +127,6 @@ def Combine(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow')
 
 
 def Text(filename='vuls_data_new.csv', seed=0, trec=0.95, round_id='@unknow'):
-    stopat = trec
     thres = 0
     starting = 1
     np.random.seed(seed)
@@ -139,7 +137,7 @@ def Text(filename='vuls_data_new.csv', seed=0, trec=0.95, round_id='@unknow'):
     read.interval = 100000
 
     num2 = read.get_allpos()
-    target = int(num2 * stopat)
+    target = int(num2 * trec)
 
     read.enable_est = False
     read.step = 10
@@ -216,94 +214,45 @@ def Rand(vul_type, stop='true', error='none', interval=100000, seed=0, filename=
     return read
 
 
-def CRASH(vul_type, stop='true', error='none', interval=100000, seed=0, filename='vuls_data_new.csv', trec=0.95,
-          round_id='@unknow'):
-    stopat = trec
+def CRASH(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow'):
     starting = 1
     np.random.seed(seed)
 
     read = MAR()
-    read = read.create(filename, vul_type)
+    read = read.create(filename, 'all')
     thres = Counter(read.body.crashes > 0)[True]
-    read.interval = interval
+    read.interval = 100000
     read.roundname = round_id
 
     num2 = read.get_allpos()
-    target = int(num2 * stopat)
+    target = int(num2 * trec)
 
     read.enable_est = False
     read.step = 10
 
     while True:
         pos, neg, total = read.get_numbers()
-        # try:
-        #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
-        # except:
-        #     print("%d, %d" %(pos,pos+neg))
+        print("%d, %d" %(pos,pos+neg))
 
         if pos + neg >= total:
-            if stop == 'knee' and error == 'random':
-                coded = np.where(np.array(read.body['code']) != "undetermined")[0]
-                seq = coded[np.argsort(read.body['time'][coded])]
-                part1 = set(seq[:read.kneepoint * read.step]) & set(
-                    np.where(np.array(read.body['code']) == "no")[0])
-                part2 = set(seq[read.kneepoint * read.step:]) & set(
-                    np.where(np.array(read.body['code']) == "yes")[0])
-                for id in part1 | part2:
-                    read.code_error(id, error=error)
             break
 
-        if pos < starting or pos + neg < thres:
+        # todo: confirm condition
+        if (pos < starting or pos + neg < thres) and pos < target:
             for id in read.BM25_get():
-                read.code_error(id, error=error)
+                read.code_error(id, error='none')
         else:
             break
-            # a,b,c,d =read.train(weighting=True,pne=True)
-            # if stop == 'est':
-            #     if stopat * read.est_num <= pos:
-            #         break
-            # elif stop == 'soft':
-            #     if pos>0 and pos_last==pos:
-            #         counter = counter+1
-            #     else:
-            #         counter=0
-            #     pos_last=pos
-            #     if counter >=5:
-            #         break
-            # elif stop == 'knee':
-            #     if pos>0:
-            #         if read.knee():
-            #             if error=='random':
-            #                 coded = np.where(np.array(read.body['code']) != "undetermined")[0]
-            #                 seq = coded[np.argsort(np.array(read.body['time'])[coded])]
-            #                 part1 = set(seq[:read.kneepoint * read.step]) & set(
-            #                     np.where(np.array(read.body['code']) == "no")[0])
-            #                 part2 = set(seq[read.kneepoint * read.step:]) & set(
-            #                     np.where(np.array(read.body['code']) == "yes")[0])
-            #                 for id in part1|part2:
-            #                     read.code_error(id, error=error)
-            #             break
-            # elif stop == 'true':
-            #     if pos >= target:
-            #         break
-            # elif stop == 'mix':
-            #     if pos >= target and stopat * read.est_num <= pos:
-            #         break
-            # if pos < read.enough:
-            #     for id in a:
-            #         read.code_error(id, error=error)
-            # else:
-            #     for id in c:
-            #         read.code_error(id, error=error)
-    # read.export()
+            # if pos >= target:
+            # break
+
     read.results = analyze(read)
     print(read.results)
     print(read.roundname, read.results['unique'] / len(read.body["code"]))
-    result = {}
-    result['est'] = read.record_est
-    result['pos'] = read.record
-    # with open("../dump/"+type+"_crash.pickle","wb") as handle:
-    #     pickle.dump(result,handle)
+
+    # todo: understand why
+    result = {'est': read.record_est, 'pos': read.record}
+
     return read
 
 
