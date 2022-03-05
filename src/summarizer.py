@@ -70,14 +70,14 @@ def check_missing_results():
         for fea in params['features']:
             for trec in params['trecs']:
                 for seed in range(30):
+                    strec = '@' + str(int(trec * 100))
                     try:
-                        result_file_path = "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC" \
-                                           "/dump/features_hpcc_{}_{}_{}.pickle".format(ds_filename, str(fea), seed)
+                        result_file_path = "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/" \
+                                           "features_hpcc_{}_{}_{}_{}.pickle".format(ds_filename, str(fea), strec,seed)
 
                         with open(result_file_path, "r") as handle:
-                            results = pickle.load(handle)
-                            cost = (float(results[str(trec)]['stats']['unique']) / float(
-                                results[str(trec)]['stats']['files']))
+                            execution_result = pickle.load(handle)
+                            cost = execution_result['stats']['unique'] / execution_result['stats']['files']
 
                             if not isinstance(cost, float) or not cost > 0:
                                 raise Exception('invalid cost')
