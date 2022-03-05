@@ -16,14 +16,17 @@ def run_target_1_summary():
     except:
         raise Exception('wrong params file path')
 
-    res = []
+    results = []
     for filename in params['dataset_files']:
         for fea in params['features']:
             for trec in params['trecs']:
-                res.append(run_summary(filename=str(filename).split(".")[0], fea=str(fea), trec=trec))
+                results.append(run_summary(filename=str(filename).split(".")[0], fea=str(fea), trec=trec))
 
-    for line in res:
+    for line in results:
         print("{}, {}, {}, {} ({})".format(line['feature'], line['dataset'], line['trec'], line['median'], line['iqr']))
+
+    with open('../dump/simulation_results.pickle', 'w') as handle:
+        pickle.dump(results, handle)
 
 
 def run_summary(filename=None, fea=None, trec=None):
@@ -54,7 +57,41 @@ def run_summary(filename=None, fea=None, trec=None):
     median = int(np.median(costs) * 100)
     iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25)) * 100)
 
-    return {"dataset": filename.split("_")[0], "feature": fea, "trec": trec, "median": median, "iqr": iqr}
+    return {"dataset": filename, "feature": fea, "trec": trec, "median": median, "iqr": iqr}
+
+
+def export_results():
+    try:
+        with open('../dump/simulation_results.pickle') as handle:
+            results = pickle.load(handle)
+    except:
+        raise Exception('problem reading results file')
+
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
+
+    trecs_df = { str(trec): None for trec in params['trecs'] }
+    ds_df    = { str(ds).replace('.csv', ''): None for ds in params['dataset_files'] }
+
+    dictdf = {}
+
+    for fea in params['features']:
+        dictdf[str(fea)] = ds_df.copy()
+
+        for ds in dictdf[str(fea)]:
+            dictdf[str(fea)][ds] = trecs_df.copy()
+
+    for result in results:
+        fea = result['feature']
+        ds  = result['dataset']
+        trec = result['trec']
+        dictdf[fea][ds][str(trec)] = "{} ({})".format(result['median'], result['iqr'])
+
+    # todo: need to transform in csv
+    return dictdf
 
 
 def check_missing_results():
