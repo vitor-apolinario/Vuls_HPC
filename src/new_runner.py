@@ -2,6 +2,7 @@ from __future__ import division, print_function
 
 import multiprocessing
 import pickle
+import json
 from collections import Counter
 
 import numpy as np
@@ -11,19 +12,20 @@ from demos import cmd
 
 
 def run_target_1():
-    dataset_files = ['drupal_combine.csv']
-    features = ['combine', 'text', 'random']
-    trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
-
-    pool = multiprocessing.Pool()
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
 
     arglist = []
-    for filename in dataset_files:
-        for fea in features:
-            for trec in trecs:
+    for filename in params['dataset_files']:
+        for fea in params['features']:
+            for trec in params['trecs']:
                 for i in range(30):
-                    arglist.append((fea, i, filename, trec))
+                    arglist.append((str(fea), i, str(filename), trec))
 
+    pool = multiprocessing.Pool()
     pool.map(error_hpcc_feature_ds_wrapper, arglist)
     pool.close()
 
