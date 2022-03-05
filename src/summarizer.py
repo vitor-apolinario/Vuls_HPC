@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function
 
 import pickle
 import json
+import glob
 
 import numpy as np
 from demos import cmd
@@ -28,17 +30,18 @@ def run_summary(filename=None, fea=None, trec=None):
     if filename is None or fea is None or trec is None:
         raise Exception("invalid params run_summary")
 
-    import glob
+    strec = '@' + str(int(trec * 100))
+
     files = glob.glob(
-        "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
+        "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}_{}*.pickle".format(filename, fea, strec))
 
     costs = []
 
     for f in files:
         try:
             with open(f, "r") as handle:
-                results = pickle.load(handle)
-                cost = results[str(trec)]['stats']['unique'] / results[str(trec)]['stats']['files']
+                execution_result = pickle.load(handle)
+                cost = execution_result['stats']['unique'] / execution_result['stats']['files']
 
                 if not isinstance(cost, float) or not cost > 0:
                     raise Exception('invalid cost {} @{}'.format(f, str(trec)))
