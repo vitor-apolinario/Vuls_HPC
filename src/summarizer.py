@@ -38,8 +38,12 @@ def run_summary(filename=None, fea=None, trec=None):
         try:
             with open(f, "r") as handle:
                 results = pickle.load(handle)
-                costs.append(results[str(trec)]['stats']['unique'] / results[str(trec)]['stats']['files'])
-                # print(results[str(trec)]['stats'])
+                cost = results[str(trec)]['stats']['unique'] / results[str(trec)]['stats']['files']
+
+                if not isinstance(cost, float) or not cost > 0:
+                    raise Exception('invalid cost {} @{}'.format(f, str(trec)))
+
+                costs.append(cost)
         except:
             raise Exception("unable to summaryze {}".format(f))
             pass
@@ -51,29 +55,35 @@ def run_summary(filename=None, fea=None, trec=None):
 
 
 def check_missing_results():
-    dataset_files = ['mozilla_cla']
-    features = ['combine', 'text', 'random']
-    trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
 
     rerun_params = []
 
-    for ds_filename in dataset_files:
-        for fea in features:
-            for trec in trecs:
+    for ds_filename in params['dataset_files']:
+        ds_filename = str(ds_filename).replace('.csv', '')
+        for fea in params['features']:
+            for trec in params['trecs']:
                 for seed in range(30):
                     try:
                         result_file_path = "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC" \
-                                           "/dump/features_hpcc_{}_{}_{}.pickle".format(ds_filename, fea, seed)
+                                           "/dump/features_hpcc_{}_{}_{}.pickle".format(ds_filename, str(fea), seed)
 
                         with open(result_file_path, "r") as handle:
                             results = pickle.load(handle)
                             cost = (float(results[str(trec)]['stats']['unique']) / float(
                                 results[str(trec)]['stats']['files']))
+
+                            if not isinstance(cost, float) or not cost > 0:
+                                raise Exception('invalid cost')
                     except:
                         try:
                             raw_filename = result_file_path.split('/')[-1].replace('.pickle', '')
                             seed = raw_filename.split('_')[-1]
-                            run = {'fea': fea, 'seed': seed, 'filename': "{}.csv".format(ds_filename), 'trec': trec}
+                            run = {'fea': str(fea), 'seed': seed, 'filename': "{}.csv".format(ds_filename), 'trec': trec}
                             rerun_params.append(run)
                         except:
                             raise Exception("Unable to check {} {}".format(result_file_path, trec))
@@ -82,7 +92,8 @@ def check_missing_results():
 
         for x in rerun_params:
             print(x)
-        print(len(rerun_params))
+
+        print("{} missing targets for {}".format(len(rerun_params), ds_filename))
 
         with open("../memory/rerun_params_{}.pickle".format(ds_filename), "w") as handle:
             pickle.dump(rerun_params, handle)
