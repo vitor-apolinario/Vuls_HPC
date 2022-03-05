@@ -81,7 +81,7 @@ def error_hpcc_feature_ds(fea, seed=1, filename='drupal_combine.csv', trec=0.95)
     elif fea == 'crash':
         read = CRASH(filename=filename, trec=trec, seed=seed, round_id=round + strec)
     elif fea == 'random':
-        read = Rand(vul_type, stop='true', seed=seed, filename=filename, trec=trec, round_id=round + strec)
+        read = Rand(filename=filename, trec=trec, seed=seed, round_id=round + strec)
     else:
         raise Exception('wrong feature provided')
 
@@ -180,30 +180,21 @@ def Text(filename='vuls_data_new.csv', seed=0, trec=0.95, round_id='@unknow'):
     return read
 
 
-def Rand(vul_type, stop='true', error='none', interval=100000, seed=0, filename='vuls_data_new.csv', trec=0.95,
-         round_id='@unknow'):
-    stopat = trec
-
+def Rand(filename='vuls_data_new.csv', seed=0, trec=0.95, round_id='@unknow'):
     np.random.seed(seed)
 
     read = MAR()
-    read = read.create(filename, vul_type)
-
-    read.interval = interval
+    read = read.create(filename, 'all')
+    read.interval = 100000
     read.step = 10
     read.roundname = round_id
-
-    num2 = read.get_allpos()
-    target = int(num2 * stopat)
-
     read.enable_est = False
 
-    result = {}
-    # result['est'] = {'x':[],'semi':[]}
-    result['est'] = {'x': []}
+    num2 = read.get_allpos()
+    target = int(num2 * trec)
+
     while True:
         pos, neg, total = read.get_numbers()
-        # print(pos)
         # try:
         #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
         # except:
@@ -213,15 +204,10 @@ def Rand(vul_type, stop='true', error='none', interval=100000, seed=0, filename=
             break
 
         for id in read.random():
-            read.code_error(id, error=error)
-        if pos + neg > 0:
-            result['est']['x'].append(pos + neg)
-            # result['est']['semi'].append(float(pos)/(pos+neg)*total)
-
-    result['pos'] = read.record
+            read.code_error(id, error='none')
 
     read.results = analyze(read)
-
+    print(read.roundname, read.results['unique'] / len(read.body["code"]))
     return read
 
 
@@ -243,7 +229,7 @@ def CRASH(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow'):
 
     while True:
         pos, neg, total = read.get_numbers()
-        print("%d, %d" %(pos,pos+neg))
+        # print("%d, %d" %(pos,pos+neg))
 
         if pos + neg >= total:
             break
@@ -258,7 +244,6 @@ def CRASH(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow'):
             # break
 
     read.results = analyze(read)
-    print(read.results)
     print(read.roundname, read.results['unique'] / len(read.body["code"]))
 
     # todo: understand why
@@ -280,7 +265,7 @@ def analyze(read):
     unique = len(read.body['code']) - len(unknown)
     count = sum(read.body['count'])
     correction = read.correction
-    return {"falsepos": falsepos, "truepos": truepos, "falseneg": falseneg, "unknownyes": unknownyes, "unique": float(unique),
+    return {"falsepos": falsepos, "truepos": truepos, "falseneg": falseneg, "unknownyes": unknownyes, "unique": unique,
             "count": count, "correction": correction, "files": len(read.body['code'])}
 
 
