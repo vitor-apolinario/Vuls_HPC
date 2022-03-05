@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function
 
 import multiprocessing
@@ -60,35 +61,25 @@ def error_hpcc_feature_ds_wrapper(args):
 
 def error_hpcc_feature_ds(fea, seed=1, filename='drupal_combine.csv', trec=0.95):
     np.random.seed(int(seed))
-    vul_type = 'all'
-    results = {}
 
-    round = "hpcc_{}_{}_{}".format(filename.split(".")[0], fea, seed)
-
-    try:
-        with open("../dump/features_" + round + ".pickle", "r") as handle:
-            results = pickle.load(handle)
-    except:
-        pass
-
-    strec = ' @' + str(int(trec * 100))
-    # print(round+strec)
+    strec = '@' + str(int(trec * 100))
+    round_id = "hpcc_{}_{}_{}_{}".format(filename.split(".")[0], fea, strec, seed)
 
     if fea == 'combine':
-        read = Combine(filename=filename, trec=trec, seed=seed, round_id=round + strec)
+        read = Combine(filename=filename, trec=trec, seed=seed, round_id=round_id)
     elif fea == 'text':
-        read = Text(filename=filename, trec=trec, seed=seed, round_id=round + strec)
+        read = Text(filename=filename, trec=trec, seed=seed, round_id=round_id)
     elif fea == 'crash':
-        read = CRASH(filename=filename, trec=trec, seed=seed, round_id=round + strec)
+        read = CRASH(filename=filename, trec=trec, seed=seed, round_id=round_id)
     elif fea == 'random':
-        read = Rand(filename=filename, trec=trec, seed=seed, round_id=round + strec)
+        read = Rand(filename=filename, trec=trec, seed=seed, round_id=round_id)
     else:
         raise Exception('wrong feature provided')
 
-    results[str(trec)] = {'loops': read.record, 'stats': read.results}
+    execution_results = {'loops': read.record, 'stats': read.results}
 
-    with open("../dump/features_" + round + ".pickle", "w") as handle:
-        pickle.dump(results, handle)
+    with open("../dump/features_" + round_id + ".pickle", "w") as handle:
+        pickle.dump(execution_results, handle)
 
 
 def Combine(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow'):
