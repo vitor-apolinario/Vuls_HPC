@@ -1,4 +1,5 @@
-import glob
+from __future__ import division, print_function
+
 import pickle
 
 import numpy as np
@@ -32,7 +33,7 @@ def run_summary(filename='drupal_combine', fea='text', trec=0.95):
         try:
             with open(f, "r") as handle:
                 results = pickle.load(handle)
-                costs.append(float(results[str(trec)]['stats']['unique']) / float(results[str(trec)]['stats']['files']))
+                costs.append(results[str(trec)]['stats']['unique'] / results[str(trec)]['stats']['files'])
                 # print(results[str(trec)]['stats'])
         except:
             pass
@@ -67,10 +68,15 @@ def check_missing_results():
                             raw_filename = result_file_path.split('/')[-1].replace('.pickle', '')
                             seed = raw_filename.split('_')[-1]
                             run = {'fea': fea, 'seed': seed, 'filename': "{}.csv".format(ds_filename), 'trec': trec}
-                            print(run)
                             rerun_params.append(run)
                         except:
                             raise Exception("Unable to check {} {}".format(result_file_path, trec))
+
+        rerun_params = sorted(rerun_params, key = lambda r: (r['filename'], r['fea'], r['trec'], r['seed']))
+
+        for x in rerun_params:
+            print(x)
+        print(len(rerun_params))
 
         with open("../memory/rerun_params_{}.pickle".format(ds_filename), "w") as handle:
             pickle.dump(rerun_params, handle)
