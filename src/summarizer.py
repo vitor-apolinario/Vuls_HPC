@@ -1,31 +1,36 @@
 from __future__ import division, print_function
 
 import pickle
+import json
 
 import numpy as np
 from demos import cmd
 
 
-def run_target_1():
-    dataset_files = ['drupal_combine.csv']
-    features = ['combine', 'text', 'random']
-    trecs = [0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0]
-    res = []
+def run_target_1_summary():
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
 
-    for filename in dataset_files:
-        for fea in features:
-            for trec in trecs:
-                res.append(run_summary(filename=filename.split(".")[0], fea=fea, trec=trec))
+    res = []
+    for filename in params['dataset_files']:
+        for fea in params['features']:
+            for trec in params['trecs']:
+                res.append(run_summary(filename=str(filename).split(".")[0], fea=str(fea), trec=trec))
 
     for line in res:
         print("{}, {}, {}, {} ({})".format(line['feature'], line['dataset'], line['trec'], line['median'], line['iqr']))
 
 
-def run_summary(filename='drupal_combine', fea='text', trec=0.95):
+def run_summary(filename=None, fea=None, trec=None):
+    if filename is None or fea is None or trec is None:
+        raise Exception("invalid params run_summary")
+
     import glob
     files = glob.glob(
         "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
-    print(filename, fea, trec)
 
     costs = []
 
@@ -36,6 +41,7 @@ def run_summary(filename='drupal_combine', fea='text', trec=0.95):
                 costs.append(results[str(trec)]['stats']['unique'] / results[str(trec)]['stats']['files'])
                 # print(results[str(trec)]['stats'])
         except:
+            raise Exception("unable to summaryze {}".format(f))
             pass
 
     median = int(np.median(costs) * 100)
