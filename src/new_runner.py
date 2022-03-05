@@ -127,23 +127,16 @@ def Combine(filename='vuls_data_new.csv', trec=0.95, seed=0, round_id='@unknow')
     return read
 
 
-def Text(vul_type, stop='true', error='none', error_rate=0.5, correct='no', interval=100000, seed=0, neg_len=0.5,
-         filename='vuls_data_new.csv', trec=0.95, round_id='@unknow'):
+def Text(filename='vuls_data_new.csv', seed=0, trec=0.95, round_id='@unknow'):
     stopat = trec
     thres = 0
     starting = 1
-    counter = 0
-    pos_last = 0
     np.random.seed(seed)
     read = MAR()
     read.roundname = round_id
-
-    read.false_neg = float(error_rate)
-    read.correction = correct
-    read.neg_len = float(neg_len)
-    read = read.create(filename, vul_type)
-
-    read.interval = interval
+    read.correction = 'no'
+    read = read.create(filename, 'all')
+    read.interval = 100000
 
     num2 = read.get_allpos()
     target = int(num2 * stopat)
@@ -153,71 +146,27 @@ def Text(vul_type, stop='true', error='none', error_rate=0.5, correct='no', inte
 
     while True:
         pos, neg, total = read.get_numbers()
-        # print(pos)
-        # try:
-        #     print("%d, %d, %d" %(pos,pos+neg, read.est_num))
-        # except:
-        #     print("%d, %d" %(pos,pos+neg))
 
         if pos + neg >= total:
-            if (stop == 'knee') and error == 'random':
-                coded = np.where(np.array(read.body['code']) != "undetermined")[0]
-                seq = coded[np.argsort(read.body['time'][coded])]
-                part1 = set(seq[:read.record['x'][read.kneepoint]]) & set(
-                    np.where(np.array(read.body['code']) == "no")[0])
-                # part2 = set(seq[read.record['x'][read.kneepoint]:]) & set(
-                #     np.where(np.array(read.body['code']) == "yes")[0])
-                # for id in part1 | part2:
-                for id in part1:
-                    read.code_error(id, error=error)
             break
 
         if pos < starting or pos + neg < thres:
             for id in read.random():
-                read.code_error(id, error=error)
+                read.code_error(id, error='none')
         else:
             a, b, c, d = read.train(weighting=True, pne=True)
-            if stop == 'est':
-                if stopat * read.est_num <= pos:
-                    break
-            elif stop == 'soft':
-                if pos > 0 and pos_last == pos:
-                    counter = counter + 1
-                else:
-                    counter = 0
-                pos_last = pos
-                if counter >= 5:
-                    break
-            elif stop == 'knee':
-                if pos > 0:
-                    if read.knee():
-                        if error == 'random':
-                            coded = np.where(np.array(read.body['code']) != "undetermined")[0]
-                            seq = coded[np.argsort(np.array(read.body['time'])[coded])]
-                            part1 = set(seq[:read.kneepoint * read.step]) & set(
-                                np.where(np.array(read.body['code']) == "no")[0])
-                            # part2 = set(seq[read.kneepoint * read.step:]) & set(
-                            #     np.where(np.array(read.body['code']) == "yes")[0])
-                            # for id in part1 | part2:
-                            for id in part1:
-                                read.code_error(id, error=error)
-                        break
-            elif stop == 'true':
-                if pos >= target:
-                    break
-            elif stop == 'mix':
-                if pos >= target and stopat * read.est_num <= pos:
-                    break
+
+            if pos >= target:
+                break
+
             if pos < 10:
                 for id in a:
-                    read.code_error(id, error=error)
+                    read.code_error(id, error='none')
             else:
                 for id in c:
-                    read.code_error(id, error=error)
-    # read.export()
+                    read.code_error(id, error='none')
+
     read.results = analyze(read)
-    # print(results)
-    # print(read.record)
     print(read.roundname, read.results['unique'] / len(read.body["code"]))
     return read
 
