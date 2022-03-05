@@ -30,17 +30,26 @@ def run_target_1():
     pool.close()
 
 
-def run_missing_target1(ds='mozilla_cla'):
-    with open("../memory/rerun_params_{}.pickle".format(ds), "r") as handle:
-        rerun = pickle.load(handle)
-        print(rerun)
-
-    pool = multiprocessing.Pool()
+def run_missing_target_1():
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
 
     arglist = []
-    for execution in rerun:
-        arglist.append((execution['fea'], int(execution['seed']), execution['filename'], float(execution['trec'])))
+    for ds in params['dataset_files']:
+        ds = str(ds).replace('.csv', '')
 
+        with open("../memory/rerun_params_{}.pickle".format(ds), "r") as handle:
+            rerun = pickle.load(handle)
+            # print(rerun)
+
+            for execution in rerun:
+                arglist.append((execution['fea'], int(execution['seed']), execution['filename'],
+                                float(execution['trec'])))
+
+    pool = multiprocessing.Pool()
     pool.map(error_hpcc_feature_ds_wrapper, arglist)
     pool.close()
 

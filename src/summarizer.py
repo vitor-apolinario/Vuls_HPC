@@ -61,9 +61,8 @@ def check_missing_results():
     except:
         raise Exception('wrong params file path')
 
-    rerun_params = []
-
     for ds_filename in params['dataset_files']:
+        ds_rerun_params = []
         ds_filename = str(ds_filename).replace('.csv', '')
         for fea in params['features']:
             for trec in params['trecs']:
@@ -84,19 +83,19 @@ def check_missing_results():
                             raw_filename = result_file_path.split('/')[-1].replace('.pickle', '')
                             seed = raw_filename.split('_')[-1]
                             run = {'fea': str(fea), 'seed': seed, 'filename': "{}.csv".format(ds_filename), 'trec': trec}
-                            rerun_params.append(run)
+                            ds_rerun_params.append(run)
                         except:
                             raise Exception("Unable to check {} {}".format(result_file_path, trec))
 
-        rerun_params = sorted(rerun_params, key = lambda r: (r['filename'], r['fea'], r['trec'], r['seed']))
+        ds_rerun_params = sorted(ds_rerun_params, key = lambda r: (r['filename'], r['fea'], r['trec'], r['seed']))
 
-        for x in rerun_params:
+        for x in ds_rerun_params:
             print(x)
 
-        print("{} missing targets for {}".format(len(rerun_params), ds_filename))
+        print("{} missing targets for {}".format(len(ds_rerun_params), ds_filename))
 
         with open("../memory/rerun_params_{}.pickle".format(ds_filename), "w") as handle:
-            pickle.dump(rerun_params, handle)
+            pickle.dump(ds_rerun_params, handle)
 
 
 if __name__ == "__main__":
