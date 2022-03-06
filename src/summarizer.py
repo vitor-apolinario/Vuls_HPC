@@ -6,6 +6,8 @@ import json
 import glob
 
 import numpy as np
+import pandas as pd
+
 from demos import cmd
 
 
@@ -73,25 +75,20 @@ def export_results():
     except:
         raise Exception('wrong params file path')
 
-    trecs_df = { str(trec): None for trec in params['trecs'] }
-    ds_df    = { str(ds).replace('.csv', ''): None for ds in params['dataset_files'] }
-
-    dictdf = {}
+    cols = params['trecs']  + ['feature', 'dataset']
+    dictdf = { col: [] for col in cols }
 
     for fea in params['features']:
-        dictdf[str(fea)] = ds_df.copy()
+        for ds in params['dataset_files']:
+            fea, ds = str(fea), str(ds)
+            dictdf['feature'].append(fea)
+            dictdf['dataset'].append(ds.split('_')[0])
+            for result in results:
+                if result['feature'] == fea and result['dataset'] == ds.replace('.csv', ''):
+                    dictdf[result['trec']].append("{} ({})".format(result['median'], result['iqr']))
 
-        for ds in dictdf[str(fea)]:
-            dictdf[str(fea)][ds] = trecs_df.copy()
 
-    for result in results:
-        fea = result['feature']
-        ds  = result['dataset']
-        trec = result['trec']
-        dictdf[fea][ds][str(trec)] = "{} ({})".format(result['median'], result['iqr'])
-
-    # todo: need to transform in csv
-    return dictdf
+    pd.DataFrame.from_dict(data=dictdf).to_csv('out.csv')
 
 
 def check_missing_results():
