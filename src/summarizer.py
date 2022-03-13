@@ -62,6 +62,45 @@ def run_summary(filename=None, fea=None, trec=None):
     return {"dataset": filename, "feature": fea, "trec": trec, "median": median, "iqr": iqr}
 
 
+def get_recall_curve():
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
+
+    for filename in params['dataset_files']:
+        filename=str(filename).split(".")[0]
+        for fea in params['features']:
+            results = {}
+            num_pos = None
+            num_files = None
+            strec = '@95'
+            files = glob.glob("../dump/features_hpcc_{}_{}_{}*.pickle".format(str(filename), str(fea), strec))
+
+            for f in files:
+                with open(f, "r") as handle:
+                    execution_result = pickle.load(handle)
+                    if not num_pos:
+                        num_pos = execution_result['stats']['truepos'] + execution_result['stats']['unknownyes']
+                        num_files = execution_result['stats']['files']
+
+                    for i, step in enumerate(execution_result['loops']['x']):
+                        reviewed_perc = np.round(step/num_files, 2)
+                        if not reviewed_perc in results:
+                            results[reviewed_perc] = []
+
+                        results[reviewed_perc].append(execution_result['loops']['pos'][i])
+
+            for step in results:
+                results[step] = np.round(np.median(results[step]) / num_pos, 2)
+
+            print(str(filename), str(fea), results)
+
+            with open("../dump/recall_curves/{}_{}.json".format(str(filename), str(fea)), 'w') as handle:
+                handle.write(json.dumps(results))
+
+
 def export_results():
     try:
         with open('../dump/simulation_results.pickle') as handle:
