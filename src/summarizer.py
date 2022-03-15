@@ -37,8 +37,7 @@ def run_summary(filename=None, fea=None, trec=None):
 
     strec = '@' + str(int(trec * 100))
 
-    files = glob.glob(
-        "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}_{}*.pickle".format(filename, fea, strec))
+    files = glob.glob("../dump/features_hpcc_{}_{}_{}*.pickle".format(filename, fea, strec))
 
     costs = []
 
@@ -145,7 +144,7 @@ def check_missing_results():
                 for seed in range(30):
                     strec = '@' + str(int(trec * 100))
                     try:
-                        result_file_path = "/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/" \
+                        result_file_path = "../dump/" \
                                            "features_hpcc_{}_{}_{}_{}.pickle".format(ds_filename, str(fea), strec,seed)
 
                         with open(result_file_path, "r") as handle:

@@ -2711,7 +2711,7 @@ def error_hpcc_feature_ds(fea, seed = 1, filename='drupal_combine.csv', trec=0.9
 
 def sum_features(filename='drupal_combine', fea='text', trec=0.95):
     import glob
-    files = glob.glob("/home/vitor-apolinario/Desktop/harmless/Vuls_HPC/dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
+    files = glob.glob("../dump/features_hpcc_{}_{}*.pickle".format(filename, fea))
     print(filename, fea, trec)
 
     costs=[]
