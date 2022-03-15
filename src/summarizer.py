@@ -93,7 +93,7 @@ def get_recall_curve():
                         results[reviewed_perc].append(execution_result['loops']['pos'][i])
 
             for step in results:
-                results[step] = np.round(np.median(results[step]) / num_pos, 2)
+                results[step] = [np.round(np.min(results[step]) / num_pos, 2), np.round(np.max(results[step]) / num_pos, 2)]
 
             print(str(filename), str(fea), results)
 
