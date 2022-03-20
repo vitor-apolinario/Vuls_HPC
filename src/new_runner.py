@@ -77,6 +77,13 @@ def error_hpcc_feature_ds(fea, seed=1, filename='drupal_combine.csv', trec=0.95)
         raise Exception('wrong feature provided')
 
     execution_results = {'loops': read.record, 'stats': read.results}
+    read.results["reached"] = True
+
+    target = int((read.results["truepos"] + read.results["unknownyes"]) * trec)
+    vul_found = read.results["truepos"]
+
+    if vul_found < target:
+        read.results["reached"] = False
 
     with open("../dump/features_" + round_id + ".pickle", "w") as handle:
         pickle.dump(execution_results, handle)

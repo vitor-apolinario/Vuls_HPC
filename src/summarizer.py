@@ -40,12 +40,16 @@ def run_summary(filename=None, fea=None, trec=None):
     files = glob.glob("../dump/features_hpcc_{}_{}_{}*.pickle".format(filename, fea, strec))
 
     costs = []
+    some_not_reached = False
 
     for f in files:
         try:
             with open(f, "r") as handle:
                 execution_result = pickle.load(handle)
                 cost = execution_result['stats']['unique'] / execution_result['stats']['files']
+
+                if not execution_result["stats"]['reached']:
+                    some_not_reached = True
 
                 if not isinstance(cost, float) or not cost > 0:
                     raise Exception('invalid cost {} @{}'.format(f, str(trec)))
@@ -58,7 +62,7 @@ def run_summary(filename=None, fea=None, trec=None):
     median = int(np.median(costs) * 100)
     iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25)) * 100)
 
-    return {"dataset": filename, "feature": fea, "trec": trec, "median": median, "iqr": iqr}
+    return {"dataset": filename, "feature": fea, "trec": trec, "median": "n/a" if some_not_reached else median, "iqr": iqr}
 
 
 def get_recall_curve():
@@ -123,6 +127,10 @@ def export_results():
             dictdf['dataset'].append(ds.split('_')[0])
             for result in results:
                 if result['feature'] == fea and result['dataset'] == ds.replace('.csv', ''):
+                    if result['median'] == "n/a":
+                        dictdf[result['trec']].append("n/a")
+                        continue
+
                     dictdf[result['trec']].append("{} ({})".format(result['median'], result['iqr']))
 
 
