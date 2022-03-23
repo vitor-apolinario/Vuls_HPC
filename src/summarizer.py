@@ -96,7 +96,14 @@ def get_recall_curve():
                         results[reviewed_perc].append(execution_result['loops']['pos'][i])
 
             for step in results:
-                results[step] = [np.round(np.min(results[step]) / num_pos, 2), np.round(np.max(results[step]) / num_pos, 2)]
+                q1=np.percentile(results[step], 25)
+                q2=np.percentile(results[step], 50)
+                q3=np.percentile(results[step], 75)
+
+                if str(params['graph']) == 'med':
+                    results[step] = [np.round(q1/num_pos, 2), np.round(q2/num_pos, 2) , np.round(q3/num_pos, 2)]
+                else:
+                    results[step] = [np.round(np.min(results[step])/num_pos, 2), np.round(np.max(results[step]) / num_pos, 2)]
 
             print(str(filename), str(fea), results)
 
