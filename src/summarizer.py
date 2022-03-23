@@ -48,8 +48,11 @@ def run_summary(filename=None, fea=None, trec=None):
                 execution_result = pickle.load(handle)
                 cost = execution_result['stats']['unique'] / execution_result['stats']['files']
 
-                if not execution_result["stats"]['reached']:
-                    some_not_reached = True
+                try:
+                    if not execution_result["stats"]['reached']:
+                        some_not_reached = True
+                except:
+                    pass
 
                 if not isinstance(cost, float) or not cost > 0:
                     raise Exception('invalid cost {} @{}'.format(f, str(trec)))
