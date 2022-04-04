@@ -62,8 +62,18 @@ def run_summary(filename=None, fea=None, trec=None):
             raise Exception("unable to summaryze {}".format(f))
             pass
 
-    median = int(np.median(costs) * 100)
-    iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25)) * 100)
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
+
+    if params["graph"] == "med":
+        median = int(np.median(costs) * 100)
+        iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25)) * 100)
+    else:
+        median = int(np.average(costs) * 100)
+        iqr = int((np.std(costs)) * 100)
 
     return {"dataset": filename, "feature": fea, "trec": trec, "median": "n/a" if some_not_reached else median, "iqr": iqr}
 
