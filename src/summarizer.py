@@ -68,7 +68,7 @@ def run_summary(filename=None, fea=None, trec=None):
     except:
         raise Exception('wrong params file path')
 
-    if params["graph"] == "med":
+    if params["graph"] == "md":
         median = int(np.median(costs) * 100)
         iqr = int((np.percentile(costs, 75) - np.percentile(costs, 25)) * 100)
     else:
@@ -113,7 +113,7 @@ def get_recall_curve():
                 q2=np.percentile(results[step], 50)
                 q3=np.percentile(results[step], 75)
 
-                if str(params['graph']) == 'med':
+                if str(params['graph']) == 'md':
                     results[step] = [np.round(q1/num_pos, 2), np.round(q2/num_pos, 2) , np.round(q3/num_pos, 2)]
                 else:
                     results[step] = [np.round(np.min(results[step])/num_pos, 2), np.round(np.max(results[step]) / num_pos, 2)]
