@@ -31,7 +31,7 @@ def run_target_1_summary():
         pickle.dump(results, handle)
 
 
-def run_summary(filename=None, fea=None, trec=None):
+def run_summary(filename=None, fea=None, trec=None, raw_executions=False):
     if filename is None or fea is None or trec is None:
         raise Exception("invalid params run_summary")
 
@@ -62,6 +62,9 @@ def run_summary(filename=None, fea=None, trec=None):
             raise Exception("unable to summaryze {}".format(f))
             pass
 
+    if raw_executions:
+        return {"dataset": filename, "feature": fea, "trec": trec, "costs": costs}
+
     try:
         with open('./params.json') as json_file:
             params = json.load(json_file)
@@ -76,6 +79,43 @@ def run_summary(filename=None, fea=None, trec=None):
         iqr = int((np.std(costs)) * 100)
 
     return {"dataset": filename, "feature": fea, "trec": trec, "median": "n/a" if some_not_reached else median, "iqr": iqr}
+
+
+def t_test():
+    try:
+        with open('./params.json') as json_file:
+            params = json.load(json_file)
+    except:
+        raise Exception('wrong params file path')
+
+    from scipy import stats
+
+    results = {}
+    cols = ["c"+str(col) for col in range(30)] + ["ds", "method", "trec"]
+    out = { col: [] for col in cols }
+    for filename in params['dataset_files']:
+        filename=str(filename).split(".")[0]
+        results[filename] = {}
+        for fea in ["text", "combine"]:
+            results[str(filename)][str(fea)] = {}
+            for trec in params['trecs']:
+                res = run_summary(filename=filename, fea=str(fea), trec=trec, raw_executions=True)
+                results[str(filename)][str(fea)][str(trec)] = res
+                out["ds"].append(filename)
+                out["method"].append(fea)
+                out["trec"].append(trec)
+
+                for i, cost in enumerate(res["costs"]):
+                    out["c"+str(i)].append(str(np.round(cost, 4)).replace(".",","))
+
+    pd.DataFrame.from_dict(data=out).to_csv('statistic_data.csv')
+
+    for filename in params['dataset_files']:
+        filename=str(filename).split(".")[0]
+        for trec in params['trecs']:
+            combine_costs = results[filename]["combine"][str(trec)]["costs"]
+            text_costs    = results[filename]["text"][str(trec)]["costs"]
+            print(filename, trec,  stats.ttest_ind(combine_costs, text_costs, equal_var=False))
 
 
 def get_recall_curve():
